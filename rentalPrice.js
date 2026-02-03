@@ -1,11 +1,15 @@
 const assert = require('assert/strict')
 
 class CarRentalPricing {
+
+  highMonthRange = { start: 4, end: 10 } // from 0 to 11
+
   price(pickupDate, dropoffDate, type, age) {        
+    
     const carClass = this.getCarClass(type)
     const rentalPeriod = this.getRentalPeriod(pickupDate, dropoffDate)
-    const season = this.getSeason(pickupDate, dropoffDate)
-    
+    const season = this.getSeason(pickupDate, dropoffDate)    
+
     if (age < 18) {
       throw new Error('Driver too young - cannot quote the price')
     }
@@ -22,8 +26,8 @@ class CarRentalPricing {
       rentalPeriod,
       age,
     })
-
-    return '$' + rentalPrice
+    
+    return '$' + rentalPrice;
   }
 
   getRentalPrice({ defaultRentPrice, season, carClass, rentalPeriod, age }) {    
@@ -64,12 +68,12 @@ class CarRentalPricing {
   }
 
   getSeason(pickupDate, dropoffDate) {
-    const highMonth = { start: 4, end: 10 }
-
-    const isHighMonth = (month) => {
-      assert(highMonth.start !== undefined && highMonth.end !== undefined)
-      return highMonth.start <= month && month <= highMonth.end
+    
+    const isHighMonth = (month) => {      
+      return this.highMonthRange.start <= month && month <= this.highMonthRange.end
     }
+
+    assert(this.highMonthRange.start >= 0 && this.highMonthRange.end < 12)
 
     const pickupMonth = pickupDate.getMonth()
     const dropoffMonth = dropoffDate.getMonth()
@@ -77,7 +81,7 @@ class CarRentalPricing {
     const isHighSeason =
       isHighMonth(pickupMonth) ||
       isHighMonth(dropoffMonth) ||
-      (pickupMonth < highMonth.start && dropoffMonth > highMonth.end)
+      (pickupMonth < this.highMonthRange.start && this.highMonthRange.end < dropoffMonth)
 
     return isHighSeason ? 'High' : 'Low'
   }

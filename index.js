@@ -15,7 +15,6 @@ const formHtml = fs.readFileSync('form.html', 'utf8')
 const resultHtml = fs.readFileSync('result.html', 'utf8')
 const errorHtml = fs.readFileSync('error.html', 'utf8')
 
-
 const rental = new CarRentalPricing()
 
 app.post('/', (req, res) => {
@@ -29,8 +28,9 @@ app.post('/', (req, res) => {
       Number(post.age),
     )    
     res.send(formHtml + resultHtml.replaceAll('$0', result))
-  } catch (err) {
-    res.send(formHtml + errorHtml.replaceAll('ERROR', err))    
+  } catch (err) {    
+    console.error(err)
+    res.send(formHtml + errorHtml.replaceAll('ERROR', err.message))    
   }
 })
 
