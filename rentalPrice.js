@@ -1,75 +1,86 @@
+const assert = require('assert/strict')
 
-function price(pickup, dropoff, pickupDate, dropoffDate, type, age) {
-  const clazz = getClazz(type);
-  const days = get_days(pickupDate, dropoffDate);
-  const season = getSeason(pickupDate, dropoffDate);
+class CarRentalPricing {
+  price(pickupDate, dropoffDate, type, age) {        
+    const carClass = this.getCarClass(type)
+    const rentalPeriod = this.getRentalPeriod(pickupDate, dropoffDate)
+    const season = this.getSeason(pickupDate, dropoffDate)
+    
+    if (age < 18) {
+      throw new Error('Driver too young - cannot quote the price')
+    }
 
-  if (age < 18) {
-      return "Driver too young - cannot quote the price";
+    if (age <= 21 && carClass !== 'Compact') {
+      throw new Error('Drivers 21 y/o or less can only rent Compact vehicles')
+    }
+
+    const defaultRentPrice = age * rentalPeriod    
+    const rentalPrice = this.getRentalPrice({
+      defaultRentPrice,
+      season,
+      carClass,
+      rentalPeriod,
+      age,
+    })
+
+    return '$' + rentalPrice
   }
 
-  if (age <= 21 && clazz !== "Compact") {
-      return "Drivers 21 y/o or less can only rent Compact vehicles";
+  getRentalPrice({ defaultRentPrice, season, carClass, rentalPeriod, age }) {    
+
+    if (carClass === 'Racer' && age <= 25 && season === 'High') {
+      defaultRentPrice *= 1.5
+    }
+
+    if (season === 'High') {
+      defaultRentPrice *= 1.15
+    }
+
+    if (rentalPeriod > 10 && season === 'Low') {
+      defaultRentPrice *= 0.9
+    }    
+
+    return defaultRentPrice
   }
 
-  let rentalprice = age * days;
-
-  if (clazz === "Racer" && age <= 25 && season === "High") {
-      rentalprice *= 1.5;
-  }
-
-  if (season === "High" ) {
-    rentalprice *= 1.15;
-  }
-
-  if (days > 10 && season === "Low" ) {
-      rentalprice *= 0.9;
-  }
-  return '$' + rentalprice;
-}
-
-function getClazz(type) {
-  switch (type) {
-      case "Compact":
-          return "Compact";
-      case "Electric":
-          return "Electric";
-      case "Cabrio":
-          return "Cabrio";
-      case "Racer":
-          return "Racer";
+  getCarClass(type) {
+    switch (type) {
+      case 'Compact':
+      case 'Electric':
+      case 'Cabrio':
+      case 'Racer':
+        return type
       default:
-          return "Unknown";
+        return 'Unknown'
+    }
+  }
+
+  getRentalPeriod(pickupDate, dropoffDate) {
+    const oneDay = 24 * 60 * 60 * 1000
+    const firstDate = new Date(pickupDate)
+    const secondDate = new Date(dropoffDate)
+
+    return Math.round(Math.abs((firstDate - secondDate) / oneDay)) + 1
+  }
+
+  getSeason(pickupDate, dropoffDate) {
+    const highMonth = { start: 4, end: 10 }
+
+    const isHighMonth = (month) => {
+      assert(highMonth.start !== undefined && highMonth.end !== undefined)
+      return highMonth.start <= month && month <= highMonth.end
+    }
+
+    const pickupMonth = pickupDate.getMonth()
+    const dropoffMonth = dropoffDate.getMonth()
+
+    const isHighSeason =
+      isHighMonth(pickupMonth) ||
+      isHighMonth(dropoffMonth) ||
+      (pickupMonth < highMonth.start && dropoffMonth > highMonth.end)
+
+    return isHighSeason ? 'High' : 'Low'
   }
 }
 
-function get_days(pickupDate, dropoffDate) {
-  const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
-  const firstDate = new Date(pickupDate);
-  const secondDate = new Date(dropoffDate);
-
-  return Math.round(Math.abs((firstDate - secondDate) / oneDay)) + 1;
-}
-
-function getSeason(pickupDate, dropoffDate) {
-  const pickup = new Date(pickupDate);
-  const dropoff = new Date(dropoffDate);
-
-  const start = 4; 
-  const end = 10;
-
-  const pickupMonth = pickup.getMonth();
-  const dropoffMonth = dropoff.getMonth();
-
-  if (
-      (pickupMonth >= start && pickupMonth <= end) ||
-      (dropoffMonth >= start && dropoffMonth <= end) ||
-      (pickupMonth < start && dropoffMonth > end)
-  ) {
-      return "High";
-  } else {
-      return "Low";
-  }
-}
-
-exports.price = price;
+module.exports = CarRentalPricing
